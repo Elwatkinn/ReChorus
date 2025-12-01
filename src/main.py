@@ -14,6 +14,7 @@ from models.sequential import *
 from models.developing import *
 from models.context import *
 from models.context_seq import *
+from models.mymodel import *
 from models.reranker import *
 from utils import utils
 

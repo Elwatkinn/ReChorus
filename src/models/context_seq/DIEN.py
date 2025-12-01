@@ -164,6 +164,7 @@ class DIENBase(DINBase):
                   'lengths':hislens}
     
     def forward(self, feed_dict):
+        # print(feed_dict)
         inp, out_dict = self._get_inp(feed_dict)
         # Fully connected layer
         predictions = self.fcn_net(inp).squeeze(dim=-1)

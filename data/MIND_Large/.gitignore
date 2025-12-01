@@ -1,0 +1,5 @@
+dev/
+MINDCTR/
+test/
+train/
+*.csv

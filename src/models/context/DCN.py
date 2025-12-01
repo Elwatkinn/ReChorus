@@ -84,6 +84,8 @@ class DCNBase(object):
 							for v in context_vectors], dim=-2) # batch size * item num * feature num * feature dim
 		context_emb = context_vectors.flatten(start_dim=-2)
 
+		# print(context_emb.shape)
+
 		# cross net
 		cross_output = self.cross_net(context_emb)
 		batch_size, item_num, output_emb = cross_output.shape
