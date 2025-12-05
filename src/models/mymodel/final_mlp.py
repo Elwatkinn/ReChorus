@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 from utils.layers import MLP_Block
 from models.BaseContextModel import ContextCTRModel
+import torch.nn.functional as F
+
+
 class final_mlpBase(object):
     def parse_model_args_finalmlp(parser):
         return parser
@@ -17,13 +20,29 @@ class final_mlpBase(object):
                  mlp2_dropout=0.0,
                  mlp2_batch_norm=False,
                  use_fs=True,
+                 use_iamlp=True,
                  fs_hidden_units=[256],
                  fs1_context=['user_id'],
                  fs2_context=['item_id'],
                  num_heads=16,
+                # embedding_dim=10,
+                #  mlp1_hidden_units=[400],
+                #  mlp1_hidden_activations="ReLU",
+                #  mlp1_dropout=0.4,
+                #  mlp1_batch_norm=True,
+                #  mlp2_hidden_units=[800],
+                #  mlp2_hidden_activations="ReLU",
+                #  mlp2_dropout=0.2,
+                #  mlp2_batch_norm=True,
+                #  use_fs=True,
+                #  fs_hidden_units=[800],
+                #  fs1_context=['user_id'],
+                #  fs2_context=['item_id'],
+                #  num_heads=10,
                  **kwargs):
         self.embedding_dim = embedding_dim
         self.use_fs = use_fs
+        self.use_iamlp = use_iamlp
         self.fs1_context = fs1_context
         self.fs2_context = fs2_context
         self.embedding_dict = nn.ModuleDict()
@@ -56,8 +75,12 @@ class final_mlpBase(object):
                                      fs1_context,
                                      fs2_context,
                                      self.feature_max)
-        self.fusion_module = InteractionAggregation(mlp1_hidden_units[-1],
-                                    mlp2_hidden_units[-1],output_dim=1,num_heads=num_heads)
+        if use_iamlp:
+            self.fusion_module = InteractionAggregationMLP(mlp1_hidden_units[-1],
+                                        mlp2_hidden_units[-1],output_dim=1)
+        else:
+            self.fusion_module = InteractionAggregation(mlp1_hidden_units[-1],
+                                        mlp2_hidden_units[-1],output_dim=1,num_heads=num_heads)
         self.apply(self.init_weights)
         
         
@@ -174,14 +197,16 @@ class FeatureSelection(nn.Module):
             fs1_input = self.fs1_ctx_bias.repeat(flat_emb.size(0),  flat_emb.size(1), 1)
         else:
             fs1_input = self._get_ctx_emb(self.fs1_context, self.fs1_ctx_emb, feed_dict, flat_emb)
-        gt1 = self.fs1_gate(fs1_input) * 2
+        # gt1 = self.fs1_gate(fs1_input) * 2
+        gt1 = F.softmax(self.fs1_gate(fs1_input), dim=-1)
         feature1 = flat_emb * gt1
 
         if len(self.fs2_context) == 0:
             fs2_input = self.fs2_ctx_bias.repeat(flat_emb.size(0),  flat_emb.size(1), 1)
         else:
             fs2_input = self._get_ctx_emb(self.fs2_context, self.fs2_ctx_emb, feed_dict, flat_emb)
-        gt2 = self.fs2_gate(fs2_input) * 2
+        # gt2 = self.fs2_gate(fs2_input) * 2
+        gt2 = F.softmax(self.fs2_gate(fs2_input), dim=-1)
         feature2 = flat_emb * gt2
 
         return feature1, feature2
@@ -205,10 +230,26 @@ class InteractionAggregation(nn.Module):
 
     def forward(self, x, y):
         output = self.w_x(x) + self.w_y(y)
-        head_x = x.view(x.shape[0], self.num_heads, self.head_x_dim)#.flatten(start_dim=0,end_dim=1)
-        head_y = y.view(x.shape[0], self.num_heads, self.head_y_dim)#.flatten(start_dim=0,end_dim=1)
+        head_x = x.view(x.shape[0], self.num_heads, self.head_x_dim)
+        head_y = y.view(x.shape[0], self.num_heads, self.head_y_dim)
         xy = torch.matmul(torch.matmul(head_x.unsqueeze(2), self.w_xy.view(self.num_heads, self.head_x_dim, -1))
                           .view(-1, self.num_heads, self.output_dim, self.head_y_dim),
                           head_y.unsqueeze(-1)).squeeze(-1)
         output +=  xy.sum(dim=1)
         return output.squeeze(-1)
+    
+class InteractionAggregationMLP(nn.Module):
+    def __init__(self, x_dim, y_dim, output_dim=1):
+        super(InteractionAggregationMLP, self).__init__()
+
+        self.fusion_mlp = MLP_Block(
+            input_dim = x_dim+y_dim,
+            output_dim = output_dim,
+            hidden_units=[512,256],
+            hidden_activations="ReLU"
+        )
+
+    def forward(self, x, y):
+        fusion_input = torch.cat([x, y], dim=-1)
+        return self.fusion_mlp(fusion_input)
+    

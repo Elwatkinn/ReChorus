@@ -185,9 +185,9 @@ if __name__ == '__main__':
 		log_args.append(arg + '=' + str(eval('args.' + arg)))
 	log_file_name = '__'.join(log_args).replace(' ', '__')
 	if args.log_file == '':
-		args.log_file = '../log/{}/{}.txt'.format(init_args.model_name+init_args.model_mode, log_file_name)
+		args.log_file = './log/{}/{}.txt'.format(init_args.model_name+init_args.model_mode, log_file_name)
 	if args.model_path == '':
-		args.model_path = '../model/{}/{}.pt'.format(init_args.model_name+init_args.model_mode, log_file_name)
+		args.model_path = './model/{}/{}.pt'.format(init_args.model_name+init_args.model_mode, log_file_name)
 
 	utils.check_dir(args.log_file)
 	logging.basicConfig(filename=args.log_file, level=args.verbose)
