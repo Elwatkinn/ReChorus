@@ -7,14 +7,14 @@ python ./src/main.py --model_name DIN --lr 5e-3 --l2 1e-6 --history_max 20  --dr
 python ./src/main.py --model_name FinalMLP --mlp1_dropout 0.2 --mlp2_dropout 0.5 --mlp1_batch_norm 1 --mlp2_batch_norm 1 --use_fs 1 --lr 5e-3 --l2 1e-6 --dataset MovieLens_1mimpCTRAll --path 'data/MovieLens_1M/ML_1MCTR/' --num_neg 0 --batch_size 1024 --metric AUC,Log_loss --include_item_features 1 --include_situation_features 1 --model_mode CTR --loss_n BCE --fs1_context c_hour_c,c_weekday_c,c_period_c,c_day_f --fs2_context i_genre_c,i_title_c --mlp1_hidden_units "[64]" --mlp2_hidden_units "[64,64]" --fs_hidden_units "[256,64]"
 
 python ./src/main.py --model_name final_mlp --lr 1e-3 --l2 1e-6 --history_max 20  --dropout 0.2 --dataset MINDCTR --path 'data/MIND_Large/' --num_neg 0 --batch_size 4096 --metric AUC,Log_loss --include_item_features 0 --include_user_features 0 --include_situation_features 0 --model_mode CTR --loss_n BCE
-python ./src/main.py --model_name final_mlp --lr 1e-3 --l2 1e-6 --history_max 20  --dropout 0.2 --dataset MovieLens_1mimpCTRAll --path 'data/MovieLens_1M/ML_1MCTR/' --num_neg 0 --batch_size 4096 --metric AUC,Log_loss --include_item_features 0 --include_user_features 0 --include_situation_features 0 --model_mode CTR --loss_n BCE
+python ./src/main.py --model_name final_mlp --lr 1e-3 --l2 1e-6 --history_max 20  --dropout 0.2 --dataset ML_1MCTR --path 'data/MovieLens_1M/' --num_neg 0 --batch_size 4096 --metric AUC,Log_loss --include_item_features 0 --include_user_features 0 --include_situation_features 0 --model_mode CTR --loss_n BCE
 
 python ./src/main.py --model_name DCN --lr 1e-3 --l2 1e-6 --history_max 20  --emb_size 10 --dropout 0.2 --dataset MINDCTR --path 'data/MIND_Large/' --num_neg 0 --batch_size 4096 --metric AUC,Log_loss --include_item_features 0 --include_user_features 0 --include_situation_features 0 --model_mode CTR --loss_n BCE
-python ./src/main.py --model_name DCN --lr 1e-3 --l2 1e-6 --history_max 20  --emb_size 10 --dropout 0.2 --dataset MovieLens_1mimpCTRAll --path 'data/MovieLens_1M/ML_1MCTR/' --num_neg 0 --batch_size 4096 --metric AUC,Log_loss --include_item_features 0 --include_user_features 0 --include_situation_features 0 --model_mode CTR --loss_n BCE
+python ./src/main.py --model_name DCN --lr 1e-3 --l2 1e-6 --history_max 20  --emb_size 10 --dropout 0.2 --dataset ML_1MCTR --path 'data/MovieLens_1M/' --num_neg 0 --batch_size 4096 --metric AUC,Log_loss --include_item_features 0 --include_user_features 0 --include_situation_features 0 --model_mode CTR --loss_n BCE
 
 
 python ./src/main.py --model_name FM --lr 1e-3 --l2 1e-6 --history_max 20  --emb_size 10 --dropout 0.2 --dataset MINDCTR --path 'data/MIND_Large/' --num_neg 0 --batch_size 4096 --metric AUC,Log_loss --include_item_features 0 --include_user_features 0 --include_situation_features 0 --model_mode CTR --loss_n BCE
-python ./src/main.py --model_name FM --lr 1e-3 --l2 1e-6 --history_max 20  --emb_size 10 --dropout 0.2 --dataset MovieLens_1mimpCTRAll --path 'data/MovieLens_1M/ML_1MCTR/' --num_neg 0 --batch_size 4096 --metric AUC,Log_loss --include_item_features 0 --include_user_features 0 --include_situation_features 0 --model_mode CTR --loss_n BCE
+python ./src/main.py --model_name FM --lr 1e-3 --l2 1e-6 --history_max 20  --emb_size 10 --dropout 0.2 --dataset ML_1MCTR --path 'data/MovieLens_1M/' --num_neg 0 --batch_size 4096 --metric AUC,Log_loss --include_item_features 0 --include_user_features 0 --include_situation_features 0 --model_mode CTR --loss_n BCE
 
 
 FM DCN

@@ -17,8 +17,54 @@ Reproduction of FinalMLP based on the ReChorus framework.
 ### 运行
 
 在终端运行如下指令
+
+#### MINDCTR数据集
 ```
 python ./src/main.py --model_name final_mlp --lr 1e-3 --l2 1e-6 --history_max 20  --dropout 0.2 --dataset MINDCTR --path 'data/MIND_Large/' --num_neg 0 --batch_size 4096 --metric AUC,Log_loss --include_item_features 0 --include_situation_features 0 --model_mode CTR --loss_n BCE
 ```
 
-运行前请确保指令中的`--dataset MINDCTR --path 'data/MIND_Large/'`在`data/MIND_Large/MINDCTR`路径下有`test.csv`,`dev.csv`,`train.csv`等数据集文件。如果你的数据集文件不在`data/MIND_Large/MINDCTR`目录请修改对应的`--dataset A --path 'B' `使路径`B/A`下有所需的数据集文件。
+数据集文件结构
+```
+MIND_Large
+    |——train
+    |——dev
+    |——test
+    |——MINDCTR
+          |——train.csv
+          |——dev.csv
+          |——test.csv
+```
+
+#### MovieLens数据集
+```
+python ./src/main.py --model_name final_mlp --lr 1e-3 --l2 1e-6 --history_max 20  --dropout 0.2 --dataset ML_1MCTR --path 'data/MovieLens_1M/' --num_neg 0 --batch_size 4096 --metric AUC,Log_loss --include_item_features 0 --include_user_features 0 --include_situation_features 0 --model_mode CTR --loss_n BCE
+
+```
+
+数据集文件结构
+```
+Movielens_1M
+    |——ML_1MCTR
+          |——train.csv
+          |——dev.csv
+          |——test.csv
+```
+
+#### 参数解释
+| 参数|类型| 默认值|解释 |
+| ----- | ----- | ----- | ----- |
+--emb_size|int|10|特征嵌合维度|
+--mlp1_hidden_units|str|'[256,256,256]'|MLP1的隐藏层大小列表|
+--mlp1_hidden_activations|str|'ReLU'|MLP1的激活函数|
+--mlp1_dropout|float|0|MLP1随机忽略的神经元比例|
+--mlp1_batch_norm|int|0|MLP1是否使用批归一化|
+--mlp2_hidden_units|str|'[256,256,256]'|MLP2的隐藏层大小列表|
+--mlp2_hidden_activations|str|'ReLU'|MLP2的激活函数|
+--mlp2_dropout|float|0|MLP2随机忽略的神经元比例|
+--mlp2_batch_norm|int|0|MLP2是否使用批归一化|
+--use_fs|int|1|是否使用特征选择模块|
+--use_opti|int|1|是否使用优化后的NewFinalMLP|
+--fs_hidden_units|str|'[256]'|特征选择模块隐藏层大小|
+--fs1_context|str|'user_id'|特征选择模块门控1的制定特征）|
+--fs2_context|str|'item_id'|特征选择模块门控2的制定特征|
+--num_heads|int|16|多头融合时指定的头数量|

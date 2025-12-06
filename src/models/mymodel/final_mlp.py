@@ -7,42 +7,64 @@ import torch.nn.functional as F
 
 class final_mlpBase(object):
     def parse_model_args_finalmlp(parser):
+        parser.add_argument('--emb_size', type=int, default=10,help='特征嵌合维度')
+
+        parser.add_argument('--mlp1_hidden_units', type=str,default='[256,256,256]',help='MLP1的隐藏层大小列表')
+        parser.add_argument('--mlp1_hidden_activations',type=str,default='ReLU',help='MLP1的激活函数')
+        parser.add_argument('--mlp1_dropout',type=float,default=0,help='MLP1随机忽略的神经元比例')
+        parser.add_argument('--mlp1_batch_norm',type=int,default=0,help='MLP1是否使用批归一化')
+
+        parser.add_argument('--mlp2_hidden_units', type=str,default='[256,256,256]',help='MLP2的隐藏层大小列表')
+        parser.add_argument('--mlp2_hidden_activations',type=str,default='ReLU',help='MLP2的激活函数')
+        parser.add_argument('--mlp2_dropout',type=float,default=0,help='MLP2随机忽略的神经元比例')
+        parser.add_argument('--mlp2_batch_norm',type=int,default=0,help='MLP2是否使用批归一化')
+
+        parser.add_argument('--use_fs',type=int,default=1, help='是否使用特征选择模块')
+        parser.add_argument('--use_opti',type=int,default=1, help='是否使用优化后的NewFinalMLP')
+        parser.add_argument('--fs_hidden_units',type=str,default='[256]', help='特征选择模块隐藏层大小')
+        parser.add_argument('--fs1_context',type=str,default='user_id', help='特征选择模块门控1的制定特征（留空则为中括号）')
+        parser.add_argument('--fs2_context',type=str,default='item_id', help='特征选择模块门控2的制定特征（留空则为中括号）')
+        parser.add_argument('--num_heads',type=int,default=16, help='多头融合时指定的头数量')
         return parser
 
     def _define_init(self, args, corpus,
-                 embedding_dim=10,
-                 mlp1_hidden_units=[256,256,256],
-                 mlp1_hidden_activations="ReLU",
-                 mlp1_dropout=0.0,
-                 mlp1_batch_norm=False,
-                 mlp2_hidden_units=[256,256,256],
-                 mlp2_hidden_activations="ReLU",
-                 mlp2_dropout=0.0,
-                 mlp2_batch_norm=False,
-                 use_fs=True,
-                 use_iamlp=True,
-                 fs_hidden_units=[256],
-                 fs1_context=['user_id'],
-                 fs2_context=['item_id'],
-                 num_heads=16,
-                # embedding_dim=10,
-                #  mlp1_hidden_units=[400],
+                #  embedding_dim=10,#
+                #  mlp1_hidden_units=[256,256,256],
                 #  mlp1_hidden_activations="ReLU",
-                #  mlp1_dropout=0.4,
-                #  mlp1_batch_norm=True,
-                #  mlp2_hidden_units=[800],
+                #  mlp1_dropout=0.0,
+                #  mlp1_batch_norm=False,
+                #  mlp2_hidden_units=[256,256,256],
                 #  mlp2_hidden_activations="ReLU",
-                #  mlp2_dropout=0.2,
-                #  mlp2_batch_norm=True,
+                #  mlp2_dropout=0.0,
+                #  mlp2_batch_norm=False,
                 #  use_fs=True,
-                #  fs_hidden_units=[800],
+                #  use_opti=True,
+                #  fs_hidden_units=[256],
                 #  fs1_context=['user_id'],
                 #  fs2_context=['item_id'],
-                #  num_heads=10,
+                #  num_heads=16,
                  **kwargs):
+        
+        embedding_dim=args.emb_size
+        mlp1_hidden_units=eval(args.mlp1_hidden_units)
+        mlp1_hidden_activations=args.mlp1_hidden_activations
+        mlp1_dropout=args.mlp1_dropout
+        mlp1_batch_norm=args.mlp1_batch_norm
+        mlp2_hidden_units=eval(args.mlp2_hidden_units)
+        mlp2_hidden_activations=args.mlp2_hidden_activations
+        mlp2_dropout=args.mlp2_dropout
+        mlp2_batch_norm=args.mlp2_batch_norm
+        use_fs=args.use_fs
+        use_opti=args.use_opti
+        fs_hidden_units=eval(args.fs_hidden_units)
+        fs1_context=[f for f in args.fs1_context.split(",") if len(f)]
+        fs2_context=[f for f in args.fs2_context.split(",") if len(f)]
+        num_heads=args.num_heads
+
+
         self.embedding_dim = embedding_dim
         self.use_fs = use_fs
-        self.use_iamlp = use_iamlp
+        self.use_opti = use_opti
         self.fs1_context = fs1_context
         self.fs2_context = fs2_context
         self.embedding_dict = nn.ModuleDict()
@@ -74,8 +96,9 @@ class final_mlpBase(object):
                                      fs_hidden_units,
                                      fs1_context,
                                      fs2_context,
-                                     self.feature_max)
-        if use_iamlp:
+                                     self.feature_max,
+                                     self.use_opti)
+        if self.use_opti:
             self.fusion_module = InteractionAggregationMLP(mlp1_hidden_units[-1],
                                         mlp2_hidden_units[-1],output_dim=1)
         else:
@@ -132,8 +155,9 @@ class final_mlpCTR(ContextCTRModel, final_mlpBase):
 
 class FeatureSelection(nn.Module):
     def __init__(self, feature_dim, embedding_dim, fs_hidden_units=[], 
-                 fs1_context=[], fs2_context=[], feature_maxn=dict()):
+                 fs1_context=[], fs2_context=[], feature_maxn=dict(),use_opti=True):
         super(FeatureSelection, self).__init__()
+        self.use_opti=use_opti
         self.fs1_context = fs1_context
         self.fs2_context = fs2_context
         self.embedding_dim = embedding_dim
@@ -198,7 +222,10 @@ class FeatureSelection(nn.Module):
         else:
             fs1_input = self._get_ctx_emb(self.fs1_context, self.fs1_ctx_emb, feed_dict, flat_emb)
         # gt1 = self.fs1_gate(fs1_input) * 2
-        gt1 = F.softmax(self.fs1_gate(fs1_input), dim=-1)
+        if self.use_opti:
+            gt1 = F.softmax(self.fs1_gate(fs1_input), dim=-1)
+        else:
+            gt1 = self.fs1_gate(fs1_input) * 2
         feature1 = flat_emb * gt1
 
         if len(self.fs2_context) == 0:
@@ -206,7 +233,11 @@ class FeatureSelection(nn.Module):
         else:
             fs2_input = self._get_ctx_emb(self.fs2_context, self.fs2_ctx_emb, feed_dict, flat_emb)
         # gt2 = self.fs2_gate(fs2_input) * 2
-        gt2 = F.softmax(self.fs2_gate(fs2_input), dim=-1)
+        if self.use_opti:
+            gt2 = F.softmax(self.fs2_gate(fs2_input), dim=-1)
+        else:
+            gt2 = self.fs2_gate(fs2_input) * 2
+            # print(111)
         feature2 = flat_emb * gt2
 
         return feature1, feature2
@@ -236,6 +267,7 @@ class InteractionAggregation(nn.Module):
                           .view(-1, self.num_heads, self.output_dim, self.head_y_dim),
                           head_y.unsqueeze(-1)).squeeze(-1)
         output +=  xy.sum(dim=1)
+        # print(111)
         return output.squeeze(-1)
     
 class InteractionAggregationMLP(nn.Module):
