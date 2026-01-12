@@ -48,7 +48,6 @@ python ./src/main.py --model_name final_mlp --lr 1e-3 --l2 1e-6 --history_max 20
 #### MovieLens数据集
 ```
 python ./src/main.py --model_name final_mlp --lr 1e-3 --l2 1e-6 --history_max 20  --dropout 0.2 --dataset ML_1MCTR --path 'data/MovieLens_1M/' --num_neg 0 --batch_size 4096 --metric AUC,Log_loss --include_item_features 0 --include_user_features 0 --include_situation_features 0 --model_mode CTR --loss_n BCE
-
 ```
 
 
